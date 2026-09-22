@@ -266,9 +266,12 @@ export function GSSoCHallOfFame() {
                 {/* Filters */}
                 <div className="flex flex-col md:flex-row gap-4 mb-12 items-center justify-between glass p-4 rounded-2xl">
                     <div className="relative w-full md:w-96">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={20} />
+                        <Search 
+                            aria-hidden="true"
+                            className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={20} />
                         <input
                             type="text"
+                            aria-label="Search by name or GitHub handle"
                             placeholder="Search by name or GitHub handle…"
                             className="w-full bg-black border border-neutral-800 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-cyan-400 transition-colors"
                             value={searchTerm}
@@ -276,8 +279,11 @@ export function GSSoCHallOfFame() {
                         />
                     </div>
                     <div className="flex items-center gap-4 w-full md:w-auto">
-                        <Filter className="text-neutral-500 shrink-0" size={20} />
+                        <Filter 
+                            aria-hidden="true"
+                            className="text-neutral-500 shrink-0" size={20} />
                         <select
+                            aria-label="Filter by rank"
                             className="bg-transparent border border-neutral-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-cyan-400 appearance-none w-full md:w-48"
                             value={filterRank}
                             onChange={(e) => setFilterRank(e.target.value)}
