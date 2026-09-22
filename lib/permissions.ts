@@ -33,18 +33,19 @@ export const ALL_CAPABILITIES: Capability[] = [
 /**
  * Council position → capabilities, straight from each role's remit in the
  * governance document. President and Vice President carry everything (the VP
- * acts on the President's behalf); the Treasurer's remit is financial, for
- * which the app has no surface, so no app powers.
+ * acts on the President's behalf). Every position can sign off 10 PR Journey
+ * milestones, so the review queue is shared across the whole council instead
+ * of waiting on one or two people.
  */
 const POSITION_CAPABILITIES: Record<string, Capability[]> = {
     President: ALL_CAPABILITIES,
     "Vice President": ALL_CAPABILITIES,
-    "General Secretary": ["announcements:send"],
-    Treasurer: [],
-    "Membership Lead": ["members:manage", "roles:manage"],
+    "General Secretary": ["announcements:send", "journey:review"],
+    Treasurer: ["journey:review"],
+    "Membership Lead": ["members:manage", "roles:manage", "journey:review"],
     "Technical Lead": ["sessions:manage", "projects:manageAny", "journey:review"],
-    "Community Lead": ["sessions:manage", "announcements:send"],
-    "Marketing Lead": ["announcements:send"],
+    "Community Lead": ["sessions:manage", "announcements:send", "journey:review"],
+    "Marketing Lead": ["announcements:send", "journey:review"],
 };
 
 /** Baseline for a plain mentor (e.g. an off-roster mentor with no council seat). */

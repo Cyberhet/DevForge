@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getMember, getSession } from "@/lib/session";
-import { canAccessAdminArea } from "@/lib/permissions";
+import { can, canAccessAdminArea } from "@/lib/permissions";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 
 /**
@@ -21,7 +21,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
     return (
         <>
-            <DashboardNav elevated={canAccessAdminArea(member)} />
+            <DashboardNav elevated={canAccessAdminArea(member)} reviewer={can(member, "journey:review")} />
             {children}
         </>
     );
