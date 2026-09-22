@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EvidenceError, validateReflection } from "./pr-journey";
+import { EvidenceError, isMilestoneUnlocked, validateReflection } from "./pr-journey";
 
 function words(n: number): string {
     return Array.from({ length: n }, (_, i) => `w${i}`).join(" ");
@@ -30,5 +30,22 @@ describe("validateReflection", () => {
                 new EvidenceError(`"${label}" is capped at ${cap} words — yours is ${count}. Cut it down.`),
             );
         }
+    });
+});
+
+describe("isMilestoneUnlocked", () => {
+    it("always opens milestone 1", () => {
+        expect(isMilestoneUnlocked({}, 1)).toBe(true);
+    });
+
+    it("opens the next milestone once the previous one is submitted or signed off", () => {
+        expect(isMilestoneUnlocked({ "1": { state: "submitted" } }, 2)).toBe(true);
+        expect(isMilestoneUnlocked({ "1": { state: "signed-off" } }, 2)).toBe(true);
+    });
+
+    it("keeps it closed when the previous one is missing or was sent back", () => {
+        expect(isMilestoneUnlocked({}, 2)).toBe(false);
+        expect(isMilestoneUnlocked({ "1": { state: "changes-requested" } }, 2)).toBe(false);
+        expect(isMilestoneUnlocked({ "1": { state: "submitted" } }, 3)).toBe(false);
     });
 });

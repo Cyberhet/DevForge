@@ -22,7 +22,7 @@ import {
     ShieldCheck,
 } from "lucide-react";
 import { milestones, reflectionTemplate, rules, workbookMeta, ARENA_LABELS, type Arena } from "@/data/pr-workbook";
-import type { JourneyEntry, JourneyRecord, PRState } from "@/lib/pr-journey";
+import { isMilestoneUnlocked, type JourneyEntry, type JourneyRecord, type PRState } from "@/lib/pr-journey";
 import type { GithubIdentity } from "@/lib/github-auth";
 
 const SIGN_IN_HREF = "/api/auth/github?next=/learn/open-source";
@@ -134,7 +134,7 @@ export function PRWorkbook() {
      * milestone opens only once the one before it is signed off. Nobody jumps
      * to a feature PR in a stranger's repo in week one.
      */
-    const isUnlocked = (n: number) => n === 1 || entryFor(n - 1)?.state === "signed-off";
+    const isUnlocked = (n: number) => isMilestoneUnlocked(entries, n);
 
     async function submit(n: number) {
         setBusy(true);
@@ -483,7 +483,9 @@ export function PRWorkbook() {
                                             <div className="mt-3">
                                                 {!unlocked ? (
                                                     <p className="text-xs text-neutral-600">
-                                                        Opens when milestone {m.n - 1} is signed off.
+                                                        {entryFor(m.n - 1)?.state === "changes-requested"
+                                                            ? `Opens when you fix and resubmit milestone ${m.n - 1}.`
+                                                            : `Opens when you submit milestone ${m.n - 1}.`}
                                                     </p>
                                                 ) : openForm === m.n ? (
                                                     <SubmitForm
