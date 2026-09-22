@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ExternalLink, Inbox, RefreshCw, Undo2 } from "lucide-react";
 import { milestones } from "@/data/pr-workbook";
 import type { JourneyEntry } from "@/lib/pr-journey";
@@ -18,7 +18,11 @@ export function JourneyQueue() {
     const [rows, setRows] = useState<PendingRow[] | null>(null);
     const [notes, setNotes] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    // Errors belong next to the submission they are about. At the top of a long
+    // queue they land off-screen and the button just looks broken.
+    const [error, setError] = useState<{ key: string; message: string } | null>(null);
+    const [needsNote, setNeedsNote] = useState<string | null>(null);
+    const noteRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
 
     useEffect(() => {
         fetch("/api/pr-journey/review")
@@ -29,17 +33,23 @@ export function JourneyQueue() {
 
     async function decide(row: PendingRow, decision: "sign-off" | "changes-requested") {
         const key = `${row.id}:${row.entry.n}`;
-        setBusy(key);
         setError(null);
+        if (decision === "changes-requested" && !notes[key]?.trim()) {
+            setNeedsNote(key);
+            noteRefs.current[key]?.focus();
+            return;
+        }
+        setNeedsNote(null);
+        setBusy(key);
         try {
             const response = await fetch("/api/pr-journey/review", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ id: row.id, n: row.entry.n, decision, note: notes[key] }),
             });
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
             if (!response.ok) {
-                setError(data.message ?? "That did not go through.");
+                setError({ key, message: data.message ?? `That did not go through (${response.status}). Try again.` });
                 return;
             }
             setRows((prev) => prev?.filter((r) => `${r.id}:${r.entry.n}` !== key) ?? null);
@@ -52,15 +62,16 @@ export function JourneyQueue() {
     async function recheck(row: PendingRow) {
         const key = `${row.id}:${row.entry.n}`;
         setBusy(key);
+        setError(null);
         try {
             const response = await fetch(`/api/pr-journey/${row.entry.n}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ id: row.id }),
             });
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
             if (!response.ok) {
-                setError(data.message ?? "Could not re-check that link.");
+                setError({ key, message: data.message ?? "Could not re-check that link." });
                 return;
             }
             setRows((prev) => prev?.map((r) => (`${r.id}:${r.entry.n}` === key ? { ...r, entry: data.entry } : r)) ?? null);
@@ -82,12 +93,6 @@ export function JourneyQueue() {
 
     return (
         <div className="space-y-4">
-            {error && (
-                <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/25 rounded-xl px-3 py-2">
-                    {error}
-                </p>
-            )}
-
             {rows.map((row) => {
                 const key = `${row.id}:${row.entry.n}`;
                 const spec = milestones.find((m) => m.n === row.entry.n);
@@ -135,12 +140,25 @@ export function JourneyQueue() {
                         </div>
 
                         <textarea
+                            ref={(el) => {
+                                noteRefs.current[key] = el;
+                            }}
                             value={notes[key] ?? ""}
-                            onChange={(e) => setNotes((prev) => ({ ...prev, [key]: e.target.value }))}
+                            onChange={(e) => {
+                                setNotes((prev) => ({ ...prev, [key]: e.target.value }));
+                                if (needsNote === key) setNeedsNote(null);
+                            }}
                             rows={2}
+                            aria-label="Note to the student"
+                            aria-invalid={needsNote === key}
                             placeholder="A note — required if you are sending it back"
-                            className="w-full bg-neutral-950 border border-neutral-800 focus:border-cyan-400/50 rounded-xl px-3 py-2 text-sm text-white placeholder:text-neutral-600 outline-none transition-colors mb-3"
+                            className={`w-full bg-neutral-950 border ${needsNote === key ? "border-amber-500/70" : "border-neutral-800"} focus:border-cyan-400/50 rounded-xl px-3 py-2 text-sm text-white placeholder:text-neutral-600 outline-none transition-colors mb-3`}
                         />
+                        {needsNote === key && (
+                            <p className="text-sm text-amber-300 -mt-1 mb-3">
+                                Write what needs changing first — the student sees this note on their workbook.
+                            </p>
+                        )}
 
                         <div className="flex flex-wrap gap-2">
                             <button
@@ -165,6 +183,11 @@ export function JourneyQueue() {
                                 <Undo2 size={15} /> Send back
                             </button>
                         </div>
+                        {error?.key === key && (
+                            <p role="alert" className="text-sm text-red-300 bg-red-500/10 border border-red-500/25 rounded-xl px-3 py-2 mt-3">
+                                {error.message}
+                            </p>
+                        )}
                     </div>
                 );
             })}
