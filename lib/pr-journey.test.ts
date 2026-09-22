@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EvidenceError, isMilestoneUnlocked, validateReflection } from "./pr-journey";
+import { EvidenceError, checkAuthor, checkKind, isMilestoneUnlocked, validateReflection } from "./pr-journey";
 
 function words(n: number): string {
     return Array.from({ length: n }, (_, i) => `w${i}`).join(" ");
@@ -47,5 +47,52 @@ describe("isMilestoneUnlocked", () => {
         expect(isMilestoneUnlocked({}, 2)).toBe(false);
         expect(isMilestoneUnlocked({ "1": { state: "changes-requested" } }, 2)).toBe(false);
         expect(isMilestoneUnlocked({ "1": { state: "submitted" } }, 3)).toBe(false);
+    });
+});
+
+describe("checkAuthor", () => {
+    const selfRule = { kind: "pr", author: "self", arena: "club" } as const;
+    const otherRule = { kind: "pr", author: "other", arena: "club" } as const;
+
+    it("allows evidence from the signed-in GitHub id when the rule requires self", () => {
+        expect(() =>
+            checkAuthor({ login: "old-name", id: 1 }, selfRule, { login: "new-name", id: 1 }),
+        ).not.toThrow();
+    });
+
+    it("rejects someone else's evidence when the rule requires self", () => {
+        expect(() =>
+            checkAuthor({ login: "other", id: 2 }, selfRule, { login: "me", id: 1 }),
+        ).toThrow(EvidenceError);
+    });
+
+    it("allows someone else's evidence when the rule requires other", () => {
+        expect(() =>
+            checkAuthor({ login: "other", id: 2 }, otherRule, { login: "me", id: 1 }),
+        ).not.toThrow();
+    });
+
+    it("rejects the signed-in user's evidence when the rule requires other", () => {
+        expect(() =>
+            checkAuthor({ login: "me", id: 1 }, otherRule, { login: "me", id: 1 }),
+        ).toThrow(EvidenceError);
+    });
+});
+
+describe("checkKind", () => {
+    const prRule = { kind: "pr", author: "self", arena: "club" } as const;
+    const issueRule = { kind: "issue", author: "self", arena: "club" } as const;
+
+    it("allows the evidence kind required by the rule", () => {
+        expect(() => checkKind("pr", prRule)).not.toThrow();
+        expect(() => checkKind("issue", issueRule)).not.toThrow();
+    });
+
+    it("rejects pull request evidence when the rule requires an issue", () => {
+        expect(() => checkKind("pr", issueRule)).toThrow(EvidenceError);
+    });
+
+    it("rejects issue evidence when the rule requires a pull request", () => {
+        expect(() => checkKind("issue", prRule)).toThrow(EvidenceError);
     });
 });
