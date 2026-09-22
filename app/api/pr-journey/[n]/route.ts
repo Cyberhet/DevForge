@@ -121,6 +121,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
         return NextResponse.json({ ok: true, message: "Submitted for sign-off.", entry });
     } catch (error) {
         if (error instanceof EvidenceError) {
+            // The student sees this message; log it too, so a wave of refusals can be told
+            // apart from a bug without asking each student for a screenshot.
+            console.info(`pr-journey: refused ${request.nextUrl.pathname}: ${error.message}`);
             return NextResponse.json({ ok: false, message: error.message }, { status: 422 });
         }
         return authErrorResponse(error);
@@ -187,6 +190,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         });
     } catch (error) {
         if (error instanceof EvidenceError) {
+            console.info(`pr-journey: re-check refused ${request.nextUrl.pathname}: ${error.message}`);
             return NextResponse.json({ ok: false, message: error.message }, { status: 422 });
         }
         return authErrorResponse(error);
