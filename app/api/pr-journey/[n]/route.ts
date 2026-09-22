@@ -177,7 +177,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
             changed,
             entry,
             message: changed
-                ? `Now ${fresh.state}, ${fresh.reviewRounds} review rounds.`
+                ? `Now ${fresh.state}, ${fresh.reviewRounds} review ${fresh.reviewRounds === 1 ? "round" : "rounds"}.`
                 : `Still ${fresh.state}. Nothing has moved.`,
         });
     } catch (error) {

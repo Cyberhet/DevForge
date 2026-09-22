@@ -433,7 +433,7 @@ export function PRWorkbook() {
                                                         {entry.evidence.state}
                                                     </span>
                                                     <span className="text-[11px] text-neutral-500 font-mono">
-                                                        {entry.evidence.reviewRounds} review rounds
+                                                        {entry.evidence.reviewRounds} review {entry.evidence.reviewRounds === 1 ? "round" : "rounds"}
                                                     </span>
                                                 </div>
                                                 <p className="text-sm text-neutral-400 mb-2 truncate">{entry.evidence.title}</p>

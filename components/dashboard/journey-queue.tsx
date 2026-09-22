@@ -122,7 +122,7 @@ export function JourneyQueue() {
                         </a>
                         <p className="text-sm text-neutral-400 mb-1">{evidence.title}</p>
                         <p className="text-xs font-mono text-neutral-600 mb-4">
-                            @{evidence.author} · {evidence.state} · {evidence.reviewRounds} review rounds ·{" "}
+                            @{evidence.author} · {evidence.state} · {evidence.reviewRounds} review {evidence.reviewRounds === 1 ? "round" : "rounds"} ·{" "}
                             {reflection.hours}h · {reflection.rounds} rounds reported · checked{" "}
                             {new Date(evidence.verifiedAt).toLocaleString()}
                         </p>
