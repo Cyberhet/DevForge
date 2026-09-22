@@ -119,6 +119,17 @@ export function emptyJourney(identity: GithubIdentity): JourneyRecord {
     };
 }
 
+/**
+ * Whether milestone n is open. The one before it has to be submitted, not
+ * necessarily signed off: students keep moving while the council reviews. A
+ * milestone that was sent back holds the next one until it is fixed and resubmitted.
+ */
+export function isMilestoneUnlocked(entries: Record<string, { state: EntryState } | undefined>, n: number): boolean {
+    if (n === 1) return true;
+    const previous = entries[String(n - 1)]?.state;
+    return previous === "submitted" || previous === "signed-off";
+}
+
 export function signedOffCount(record: JourneyRecord | null): number {
     if (!record) return 0;
     return Object.values(record.entries).filter((e) => e.state === "signed-off").length;
