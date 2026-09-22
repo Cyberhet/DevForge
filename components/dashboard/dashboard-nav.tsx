@@ -12,6 +12,7 @@ import {
     Users,
     Trophy,
     ShieldCheck,
+    ClipboardCheck,
     Menu,
     X,
 } from "lucide-react";
@@ -23,6 +24,8 @@ interface NavLink {
     href: string;
     icon: React.ReactNode;
     elevated?: boolean;
+    /** Only for members who can sign off 10 PR Journey milestones. */
+    reviewer?: boolean;
 }
 
 const LINKS: NavLink[] = [
@@ -32,6 +35,7 @@ const LINKS: NavLink[] = [
     { name: "Sessions", href: "/dashboard/events", icon: <CalendarCheck size={18} /> },
     { name: "Members", href: "/dashboard/members", icon: <Users size={18} /> },
     { name: "Leaderboard", href: "/dashboard/leaderboard", icon: <Trophy size={18} /> },
+    { name: "Sign-offs", href: "/dashboard/journey", icon: <ClipboardCheck size={18} />, reviewer: true },
     { name: "Admin", href: "/admin", icon: <ShieldCheck size={18} />, elevated: true },
 ];
 
@@ -43,11 +47,11 @@ const LINKS: NavLink[] = [
  * Desktop shows a pill row; below `lg` it collapses to a hamburger, since seven
  * links scrolling sideways on a phone read as clutter.
  */
-export function DashboardNav({ elevated = false }: { elevated?: boolean }) {
+export function DashboardNav({ elevated = false, reviewer = false }: { elevated?: boolean; reviewer?: boolean }) {
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
 
-    const links = LINKS.filter((link) => !link.elevated || elevated);
+    const links = LINKS.filter((link) => (!link.elevated || elevated) && (!link.reviewer || reviewer));
 
     const isActive = (href: string) =>
         href === "/dashboard" ? pathname === href : pathname.startsWith(href);

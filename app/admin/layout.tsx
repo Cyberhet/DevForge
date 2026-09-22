@@ -9,8 +9,8 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 export default function AdminLayout({ children }: { children: ReactNode }) {
     return (
         <>
-            {/* /admin is only reachable by elevated users (proxy + page guard). */}
-            <DashboardNav elevated />
+            {/* /admin is only reachable by elevated users (proxy + page guard), all of whom can sign off journey milestones. */}
+            <DashboardNav elevated reviewer />
             {children}
         </>
     );
