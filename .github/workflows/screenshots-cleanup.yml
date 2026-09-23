@@ -1,0 +1,32 @@
+name: Screenshot cleanup
+
+# Drops a PR's screenshots from the bot-screenshots branch once the PR is done,
+# so the branch doesn't grow forever. Runs no code from the pull request.
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove this PR's images
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          git init -q images && cd images
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch -q --depth 1 origin bot-screenshots || { echo "no bot-screenshots branch yet"; exit 0; }
+          git checkout -q FETCH_HEAD
+          git checkout -q -B bot-screenshots
+          [ -d "pr-${PR}" ] || { echo "nothing stored for PR #${PR}"; exit 0; }
+          rm -rf "pr-${PR}"
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -qm "Remove screenshots for closed PR #${PR}"
+          git push -q origin bot-screenshots

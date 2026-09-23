@@ -1,0 +1,99 @@
+name: Screenshot comment
+
+# Publishes the images the Screenshots workflow produced and comments on the PR.
+#
+# This runs on `workflow_run`, so it has this repo's permissions — and therefore
+# never checks out or runs anything from the pull request. It only downloads the
+# PNGs from the other run, commits them to the `bot-screenshots` branch (images
+# in a comment need a URL), and writes one comment.
+on:
+  workflow_run:
+    workflows: ["Screenshots"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: screenshot-comment-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  comment:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      # This repo's own code, at the default branch — never the PR's.
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: screenshots
+          path: shots
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read the PR number
+        id: pr
+        run: |
+          set -euo pipefail
+          number="$(tr -cd '0-9' < shots/pr.txt)"
+          [ -n "$number" ] || { echo "no PR number in artifact"; exit 1; }
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the images to the bot-screenshots branch
+        id: publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.pr.outputs.number }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          dir="pr-${PR}/run-${RUN_ID}"
+          git init -q images && cd images
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch -q --depth 1 origin bot-screenshots 2>/dev/null; then
+            git checkout -q FETCH_HEAD
+            git checkout -q -B bot-screenshots
+            rm -rf "pr-${PR}"          # keep only the newest run for this PR
+          else
+            git checkout -q --orphan bot-screenshots
+            git rm -rq --cached . 2>/dev/null || true
+            printf '# Screenshot bot\n\nImages posted by the Screenshots workflow. Not part of the site.\n' > README.md
+          fi
+          mkdir -p "$dir"
+          cp ../shots/*.jpg "$dir"/ 2>/dev/null || true
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -qm "Screenshots for PR #${PR} (run ${RUN_ID})" || echo "nothing to commit"
+          git push -q origin bot-screenshots
+          echo "raw=https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/bot-screenshots/${dir}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/github-script@v7
+        env:
+          RAW_BASE: ${{ steps.publish.outputs.raw }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        with:
+          script: |
+            const fs = require("node:fs");
+            const { buildComment, postComment } = await import(
+              `${process.env.GITHUB_WORKSPACE}/.github/scripts/screenshot-comment.mjs`
+            );
+            const manifest = JSON.parse(fs.readFileSync("shots/manifest.json", "utf8"));
+            const body = buildComment({
+              shots: manifest.shots ?? [],
+              rawBase: process.env.RAW_BASE,
+              runUrl: process.env.RUN_URL,
+            });
+            await postComment({
+              github,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number(process.env.PR_NUMBER),
+              body,
+            });

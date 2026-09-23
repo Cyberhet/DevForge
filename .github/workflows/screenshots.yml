@@ -1,0 +1,84 @@
+name: Screenshots
+
+# Builds the pull request and photographs the pages it touches.
+#
+# `pull_request`, not `pull_request_target`: this job builds and runs the PR's
+# code, so it gets a read-only token and no secrets. It cannot comment on the
+# PR — the Screenshot comment workflow does that afterwards, without ever
+# running any of this code.
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - "components/**"
+      - "lib/**"
+      - "data/**"
+      - "public/**"
+      - "tailwind.config.ts"
+      - "next.config.ts"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: screenshots-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  shoot:
+    name: Capture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Work out which pages changed
+        id: changed
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          {
+            echo "files<<CHANGED_EOF"
+            git diff --name-only "${BASE_SHA}...${HEAD_SHA}"
+            echo "CHANGED_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Install Playwright and Chromium
+        # --no-save: the site doesn't depend on Playwright, only this job does.
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+
+      - name: Start the built site
+        run: |
+          npm run start -- --port 3000 &
+          npx --yes wait-on@9 http://localhost:3000 --timeout 90000
+
+      - name: Take the screenshots
+        env:
+          BASE_URL: http://localhost:3000
+          CHANGED: ${{ steps.changed.outputs.files }}
+          OUT_DIR: screenshots
+        run: |
+          node .github/scripts/screenshot-pages.mjs
+          echo "${{ github.event.pull_request.number }}" > screenshots/pr.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots/
+          retention-days: 7
