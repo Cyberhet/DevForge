@@ -26,6 +26,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { url: `${BASE_URL}/conferences`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.6 },
         { url: `${BASE_URL}/learn`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
         { url: `${BASE_URL}/learn/gsoc`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
+        { url: `${BASE_URL}/learn/open-source`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+        { url: `${BASE_URL}/join`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     ]
 
     const studentRoutes: MetadataRoute.Sitemap = studentsData.map((s) => ({
