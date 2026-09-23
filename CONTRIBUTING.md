@@ -27,6 +27,8 @@ npm run dev          # http://localhost:3000
 
 **No secrets needed.** The public pages, the build and the tests all run without any `.env` file. Pages that need the member portal's database (sign-in, dashboard, admin) show an error locally. That's expected, and none of the `good first issue`s need them.
 
+See `.env.example` for the full list of environment variables those pages need.
+
 ## 3. Make the change
 
 ```bash
