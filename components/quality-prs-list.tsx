@@ -137,8 +137,9 @@ export function QualityPRsList() {
                 >
                     {/* Author Filter */}
                     <div className="flex items-center gap-2 glass rounded-lg px-4 py-2">
-                        <Filter className="w-4 h-4 text-cyan-400" />
+                        <Filter className="w-4 h-4 text-cyan-400" aria-hidden="true" />
                         <select
+                            aria-label="Filter by member"
                             value={activeAuthor}
                             onChange={(e) => setFilterAuthor(e.target.value)}
                             className="bg-transparent text-white border-none outline-none cursor-pointer"
@@ -154,8 +155,9 @@ export function QualityPRsList() {
 
                     {/* Sort */}
                     <div className="flex items-center gap-2 glass rounded-lg px-4 py-2">
-                        <SortDesc className="w-4 h-4 text-cyan-400" />
+                        <SortDesc className="w-4 h-4 text-cyan-400" aria-hidden="true" />
                         <select
+                            aria-label="Sort by"
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value as SortOption)}
                             className="bg-transparent text-white border-none outline-none cursor-pointer"
