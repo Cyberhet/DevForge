@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkArena, EvidenceError, isMilestoneUnlocked, validateReflection } from "./pr-journey";
+import { checkArena, checkAuthor, checkKind, EvidenceError, isMilestoneUnlocked, validateReflection, type EvidenceRule } from "./pr-journey";
 
 function words(n: number): string {
     return Array.from({ length: n }, (_, i) => `w${i}`).join(" ");
@@ -83,3 +83,36 @@ describe("checkArena", () => {
         ).not.toThrow();
     });
 });
+
+describe("checkKind", () => {
+    it("passes on a match", () => {
+        expect(() => checkKind("pr", { kind: "pr" } as EvidenceRule)).not.toThrow();
+        expect(() => checkKind("issue", { kind: "issue" } as EvidenceRule)).not.toThrow();
+    });
+
+    it("throws EvidenceError on a mismatch", () => {
+        expect(() => checkKind("issue", { kind: "pr" } as EvidenceRule)).toThrow(EvidenceError);
+        expect(() => checkKind("pr", { kind: "issue" } as EvidenceRule)).toThrow(EvidenceError);
+    });
+});
+
+describe("checkAuthor", () => {
+    it("with author self accepts the member's login and rejects others", () => {
+        const me = { login: "member", id: 123 };
+        const author = { login: "MEMBER", id: 123 };
+        const other = { login: "other", id: 456 };
+        
+        expect(() => checkAuthor(author, { author: "self" } as EvidenceRule, me)).not.toThrow();
+        expect(() => checkAuthor(other, { author: "self" } as EvidenceRule, me)).toThrow(EvidenceError);
+    });
+
+    it("with author other rejects the member's own PR", () => {
+        const me = { login: "member", id: 123 };
+        const author = { login: "member", id: 123 };
+        const other = { login: "other", id: 456 };
+
+        expect(() => checkAuthor(other, { author: "other" } as EvidenceRule, me)).not.toThrow();
+        expect(() => checkAuthor(author, { author: "other" } as EvidenceRule, me)).toThrow(EvidenceError);
+    });
+});
+
