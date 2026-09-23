@@ -71,4 +71,10 @@ Tests use [Vitest](https://vitest.dev) and live next to the code: `lib/foo.ts` �
 
 ## Deployments
 
-Only `main` deploys to [devforge.club](https://www.devforge.club), via Vercel. Pull requests don't get preview deployments; CI (GitHub Actions) is what checks your PR.
+Only `main` deploys to [devforge.club](https://www.devforge.club). **CI (Lint, Test, Type-check & build) is what checks your PR** — those are the three that have to be green.
+
+You may also see a **Vercel** check:
+
+- On a PR that changes pages or components, it builds a preview so a reviewer can look at your change.
+- On a tests-only, docs-only or script-only PR it is skipped: there's nothing to look at.
+- On a PR from a **fork** it often shows a red ✗ saying *"Authorization required to deploy"*. **Ignore it.** We don't build previews from forks, it doesn't block merging, and it isn't something you did wrong.
