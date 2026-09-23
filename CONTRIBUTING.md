@@ -75,6 +75,6 @@ Only `main` deploys to [devforge.club](https://www.devforge.club). **CI (Lint, T
 
 You may also see a **Vercel** check:
 
-- On a PR that changes pages or components, it builds a preview so a reviewer can look at your change.
+- On a PR that changes pages or components, it builds a preview so a reviewer can look at your change, and a **screenshot bot** comments with pictures of the pages you touched, on desktop and phone widths. Check them: if your change looks wrong there, it looks wrong in production.
 - On a tests-only, docs-only or script-only PR it is skipped: there's nothing to look at.
 - On a PR from a **fork** it often shows a red ✗ saying *"Authorization required to deploy"*. **Ignore it.** We don't build previews from forks, it doesn't block merging, and it isn't something you did wrong.
