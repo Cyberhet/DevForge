@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { checkAuthor, checkKind, EvidenceError } from "./pr-journey";
-import type { EvidenceRule } from "./pr-journey";
+import { checkAuthor, checkKind, EvidenceError } from "./pr-journey.js";
+import type { EvidenceRule } from "./pr-journey.js";
 
 describe("checkKind", () => {
     it("passes on a match", () => {
