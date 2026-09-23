@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EvidenceError, isMilestoneUnlocked, validateReflection } from "./pr-journey";
+import { checkArena, EvidenceError, isMilestoneUnlocked, validateReflection } from "./pr-journey";
 
 function words(n: number): string {
     return Array.from({ length: n }, (_, i) => `w${i}`).join(" ");
@@ -47,5 +47,39 @@ describe("isMilestoneUnlocked", () => {
         expect(isMilestoneUnlocked({}, 2)).toBe(false);
         expect(isMilestoneUnlocked({ "1": { state: "changes-requested" } }, 2)).toBe(false);
         expect(isMilestoneUnlocked({ "1": { state: "submitted" } }, 3)).toBe(false);
+    });
+});
+describe("checkArena", () => {
+    it.each(["workbook", "club"] as const)(
+        "allows the DevForge organization for the %s arena, regardless of case",
+        (arena) => {
+            expect(() => checkArena("NST-DEVFORGE", arena)).not.toThrow();
+            expect(() => checkArena("nst-devforge", arena)).not.toThrow();
+            expect(() => checkArena("NsT-DeVfOrGe", arena)).not.toThrow();
+        },
+    );
+
+    it.each(["workbook", "club"] as const)(
+        "rejects a different organization for the %s arena",
+        (arena) => {
+            expect(() => checkArena("unrelated-org", arena)).toThrow(EvidenceError);
+        },
+    );
+
+    it("rejects the DevForge organization for the external arena", () => {
+        expect(() => checkArena("NST-DEVFORGE", "external")).toThrow(EvidenceError);
+        expect(() => checkArena("nst-devforge", "external")).toThrow(EvidenceError);
+    });
+
+    it("rejects the member's own GitHub account, regardless of case", () => {
+        expect(() =>
+            checkArena("Jaydeep83721-Dev", "external", "jaydeep83721-dev"),
+        ).toThrow(EvidenceError);
+    });
+
+    it("allows an unrelated organization for the external arena", () => {
+        expect(() =>
+            checkArena("unrelated-org", "external", "jaydeep83721-dev"),
+        ).not.toThrow();
     });
 });
